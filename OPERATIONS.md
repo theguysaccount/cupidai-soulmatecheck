@@ -43,7 +43,7 @@ Steps once Jack decides:
 4. Old github.io links (including ones people already shared) redirect to the domain with their `#` part intact, so they keep working.
 5. The note's `soulmatecheck.com/bumble` idea is a path for later: a page that explains how to share a check from a dating profile.
 
-**Switched on 2026-11-22 to `app.soulmatecheck.com`.** A subdomain, so the apex and whatever SiteGround serves there stay as they are. `app` has a CNAME to `theguysaccount.github.io` in the zone that answers for soulmatecheck.com (SiteGround's nameservers). The domain rollout session made it the Pages custom domain (certificate approved, HTTPS enforced), set `SITE_URL` = `https://app.soulmatecheck.com` and redeployed at 08:22 UTC. A self-test three minutes later failed only because the CDN still held the old home page (see step 4 below).
+**Switched on 2026-11-22 to `app.soulmatecheck.com`.** A subdomain, so the apex and whatever SiteGround serves there stay as they are. `app` has a CNAME to `theguysaccount.github.io` in the zone that answers for soulmatecheck.com (SiteGround's nameservers). The domain rollout session made it the Pages custom domain (certificate approved, HTTPS enforced), set `SITE_URL` = `https://app.soulmatecheck.com` and redeployed at 08:22 UTC. A self-test three minutes later failed only because the CDN still held the old home page (see step 4 below). That copy of `/` was still served at 08:36, the next deploy (08:37) cleared it, and the self-test passed at 08:38.
 
 #### Exact commands to switch the base URL (added 2026-11-22)
 
@@ -72,6 +72,9 @@ sleep 20; gh run watch -R "$REPO" --exit-status "$(gh run list -R "$REPO" --work
 #    Then, from a checkout of this repo. (A machine whose DNS cache doesn't know the new name yet fails
 #    these with "nodename nor servname provided"; the selftest.yml run on GitHub's runners still counts.)
 sleep 600
+# The home page should name the new address. If it still names the old one, run pages.yml once more
+# (on 2026-11-22 a stale / outlived the wait here, and the next deploy cleared it).
+curl -s --resolve "$DOMAIN:443:185.199.108.153" "https://$DOMAIN/" | grep -o '<link rel="canonical" href="[^"]*"'   # expect https://$DOMAIN/
 scripts/e2e.sh "https://$DOMAIN/"
 python3 scripts/check_live.py "https://$DOMAIN"
 curl -sI "https://theguysaccount.github.io/${REPO#*/}/" | grep -i '^location'   # expect https://$DOMAIN/
